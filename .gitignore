@@ -1,0 +1,30 @@
+# Datos: nunca se suben a GitHub (se documentan en data/bronze/MANIFEST.md)
+data/_downloads/
+data/_to_delete/
+data/bronze/**
+data/silver/**
+data/gold/**
+!data/**/.gitkeep
+!data/bronze/MANIFEST.md
+outputs/*.geojson
+outputs/*.parquet
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+mlruns/
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+.env
+data/_tmp/
