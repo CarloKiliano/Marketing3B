@@ -52,10 +52,33 @@ SCIAN_MINISUPER = "462112"     # minisupers
 SCIAN_TIENDAS = (SCIAN_ABARROTES, SCIAN_SUPERMERCADO, SCIAN_MINISUPER)
 SCIAN_MAYOREO_ABARROTES = "431110"  # en 2021 INEGI registró aquí a la mayoría de las Neto
 
-# --- Parámetros del modelo (valores iniciales, se ajustan en Gold) --------
-H3_RES = 9                          # ~0.1 km2 por hexágono
-KDE_BANDWIDTHS_M = [300, 500, 800]  # análisis de sensibilidad
+# --- Gold · Índice de expansión (supuestos iniciales; se calibran en el backtest) ---
+H3_RES = 9                 # ~0.1 km² por hexágono; centros vecinos a ~350 m
+# Demanda objetivo: "hogares_sin_auto" (compran su despensa caminando: el cliente 3B) u "hogares".
+DEMANDA_OBJETIVO = "hogares_sin_auto"
+# Modelo de Huff: P(hogar en h compra en tienda j) = A_j·f(d) / (α0 + Σ A_k·f(d_k)),  f(d) = exp(-d/β)
+HUFF_BETA_M = 350          # decaimiento: a 350 m la atracción cae a 37%; a 700 m, a 14%
+HUFF_RADIO_MAX_M = 1000    # más allá de 1 km caminando, la atracción se considera nula
+HUFF_DIST_MIN_M = 120      # distancia típica dentro del mismo hexágono (evita d = 0)
+HUFF_OPCION_EXTERNA = 1.0  # α0: mercados, tianguis y otras opciones no registradas en el DENUE
+# Huff anidado (nested logit): el hogar elige primero el TIPO de tienda (nido) y luego la tienda.
+# λ ∈ (0, 1]: λ = 1 es el Huff simple; λ < 1 hace que una 3B nueva compita sobre todo dentro de su
+# nido (hard discount) -> canibalización realista entre tiendas 3B cercanas.
+HUFF_LAMBDA_NIDO = 0.5
+# Atractivo relativo por formato (3B = 1). Supuestos de partida: se prueban en el backtest.
+ATRACTIVO = {
+    "3B": 1.0,
+    "Hard discount": 1.0,   # Neto y Bodega Aurrera compiten directo por precio
+    "Supermercado": 2.0,    # surtido amplio, pero menos visitas de reposición
+    "Conveniencia": 0.4,    # OXXO/7-Eleven: sustituto parcial de la despensa
+    "Tradicional": 0.15,    # una tiendita es poco, pero hay una a ~40 m de cada 3B
+}
+# Factibilidad operativa: 3B crece "como mancha de aceite" desde su red (EDA de Fase 3: 94% de las
+# aperturas 2021-2026 cayeron a < 2.5 km de una 3B existente). Fuera del radio el índice decae.
+RADIO_OPERATIVO_M = 2500
+DECAIMIENTO_FUERA_RED_M = 1000
+KDE_BANDWIDTHS_M = [300, 500, 800]  # comparación KDE vs H3 y sensibilidad
+MIN_DIST_CANDIDATAS_M = 600  # separación mínima del Top 20 (= distancia mediana entre 3B: 607 m)
+TOP_N = 20
 ISOCHRONES_MIN = [5, 10]            # minutos caminando
 WALK_SPEED_KMH = 4.5
-MIN_DIST_CANDIDATAS_M = 600         # separación mínima entre zonas del Top 20
-TOP_N = 20

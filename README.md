@@ -74,6 +74,9 @@ python scripts/03_silver_denue.py          # tiendas por cadena, 3B y aperturas
 python scripts/04_precision_validacion.py  # tras validar a mano docs/validacion/muestra_validacion_3b.csv
 python scripts/05_silver_demanda.py        # censo + Marco Geoestadístico + CONEVAL
 
+# 5. Capa Gold
+python scripts/06_gold_indice.py           # índice H3 2021 y 2026, Top 20 -> outputs/top20_zonas_3b.geojson
+
 # 4. Pruebas
 pytest
 ```
@@ -86,8 +89,8 @@ pytest
 | 1 | Exploración de datos (EDA): 143 → 305 tiendas 3B, 169 aperturas para el backtest | Completa |
 | 2.1 | Silver DENUE: 10 cadenas, 3B 144 → 305, 162 aperturas confirmadas; validación manual 88% (IC 95% 76–94%) | Completa |
 | 2.2 | Silver demanda: 2,431 AGEB con perfil y 63,076 manzanas habitadas (2.74 M hogares) | Completa |
-| 3 | Índice de expansión H3 + Top 20 + comparación KDE vs H3 | Pendiente |
-| 4 | Backtest + comparación Voronoi vs Huff vs isócronas | Pendiente |
+| 3 | Índice de expansión H3 (Huff anidado + canibalización + red) + Top 20 v1 + comparación KDE vs H3 | Completa |
+| 4 | Backtest + comparación Voronoi vs Huff vs isócronas | Siguiente |
 | 5 | App Streamlit publicada | Pendiente |
 | 6 | Presentación ejecutiva de marketing para 3B | Pendiente |
 | Extra 1 | Capa generativa dentro de la app | Opcional |

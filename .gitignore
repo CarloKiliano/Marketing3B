@@ -7,6 +7,7 @@ data/gold/**
 !data/**/.gitkeep
 !data/bronze/MANIFEST.md
 outputs/*.geojson
+!outputs/top20_zonas_3b.geojson
 outputs/*.parquet
 
 # Python
