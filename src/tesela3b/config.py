@@ -81,4 +81,7 @@ KDE_BANDWIDTHS_M = [300, 500, 800]  # comparación KDE vs H3 y sensibilidad
 MIN_DIST_CANDIDATAS_M = 600  # separación mínima del Top 20 (= distancia mediana entre 3B: 607 m)
 TOP_N = 20
 ISOCHRONES_MIN = [5, 10]            # minutos caminando
-WALK_SPEED_KMH = 4.5
+WALK_SPEED_KMH = 4.5                # 10 min = 750 m por la red de calles
+# Si no está la red OSM: distancia por calle ≈ línea recta × factor de rodeo (en trayectos cortos
+# urbanos la literatura reporta ~1.2-1.4; se usa 1.3).
+FACTOR_RODEO = 1.3

@@ -75,7 +75,12 @@ python scripts/04_precision_validacion.py  # tras validar a mano docs/validacion
 python scripts/05_silver_demanda.py        # censo + Marco Geoestadístico + CONEVAL
 
 # 5. Capa Gold
-python scripts/06_gold_indice.py           # índice H3 2021 y 2026, Top 20 -> outputs/top20_zonas_3b.geojson
+python scripts/06_gold_indice.py           # índice H3 2021 y 2026 (Huff anidado), Top 20 v1
+
+# 6. Backtest y recomendación final
+python scripts/07_descargar_red_osm.py     # una vez, con internet: red peatonal de OSM para las isócronas
+python scripts/08_backtest.py              # backtest 2021->2026, Voronoi vs Huff vs isócronas, Top 20 final
+                                           #   -> outputs/top20_zonas_3b.geojson, reports/backtest.md
 
 # 4. Pruebas
 pytest
@@ -90,8 +95,8 @@ pytest
 | 2.1 | Silver DENUE: 10 cadenas, 3B 144 → 305, 162 aperturas confirmadas; validación manual 88% (IC 95% 76–94%) | Completa |
 | 2.2 | Silver demanda: 2,431 AGEB con perfil y 63,076 manzanas habitadas (2.74 M hogares) | Completa |
 | 3 | Índice de expansión H3 (Huff anidado + canibalización + red) + Top 20 v1 + comparación KDE vs H3 | Completa |
-| 4 | Backtest + comparación Voronoi vs Huff vs isócronas | Siguiente |
-| 5 | App Streamlit publicada | Pendiente |
+| 4 | Backtest 2021→2026 (AUC 0.74, lift 2.6× en el 10% superior), Voronoi vs Huff vs isócronas, modelo de preferencia revelada, Top 20 final | Completa |
+| 5 | App Streamlit publicada | Siguiente |
 | 6 | Presentación ejecutiva de marketing para 3B | Pendiente |
 | Extra 1 | Capa generativa dentro de la app | Opcional |
 | Extra 2 | Drive-to-store completo + geo-experimento | Opcional |

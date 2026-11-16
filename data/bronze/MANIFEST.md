@@ -10,7 +10,7 @@ Los archivos originales viven en `data/_downloads/` y se extraen con `python scr
 | Marco Geoestadístico CPV 2020 (nacional) | `889463807469_s.zip` | `marco_geo/` (solo entidad 09; capas a, mun, ent, m, l + catálogos) | CPV 2020 | 2026-11-04 | https://www.inegi.org.mx/temas/mg/#descargas |
 | Grado de Rezago Social AGEB urbana (CONEVAL) | `GRS_AGEB_urbana_2020.zip` | `coneval/` | 2020 | 2026-11-03 | https://www.coneval.org.mx/Medicion/IRS/Paginas/Rezago_social_AGEB_2020.aspx |
 | Afluencia STC Metro desglosada | `afluenciastc_desglosado_09_2026.csv` | `movilidad/` | 2021-01 a 2026-09 | 2026-11-03 | https://datos.cdmx.gob.mx |
-| Red vial peatonal OSM | (se descarga con OSMnx) | `osm/` | — | Semana 4 | https://www.openstreetmap.org |
+| Red vial peatonal OSM | `scripts/07_descargar_red_osm.py` (OSMnx, 2026-11-15) | `osm/nodos.parquet`, `osm/aristas.parquet` | 192,048 nodos · 535,398 aristas · 37,283 km | Fase 4 | https://www.openstreetmap.org (© colaboradores de OSM, ODbL) |
 
 ## Pendientes
 

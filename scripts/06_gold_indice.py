@@ -2,7 +2,8 @@
 
 Uso: python scripts/06_gold_indice.py
 Salidas: data/gold/indice_h3_{corte}.parquet, data/gold/top20_{corte}.parquet, data/gold/parametros_{corte}.json,
-         outputs/top20_zonas_3b.geojson, reports/indice_expansion.md
+         outputs/top20_indice_v1.geojson, reports/indice_expansion.md
+(La recomendación final, outputs/top20_zonas_3b.geojson, la genera scripts/08_backtest.py.)
 """
 import sys
 import time
@@ -21,4 +22,4 @@ if __name__ == "__main__":
               f"cuota 3B promedio {i.cuota_3b_actual.mean():.1%}")
     top = r[cfg.CORTE_ACTUAL]["top"]
     print(f"\nTop {cfg.TOP_N} ({cfg.CORTE_ACTUAL}) por alcaldía: {top.alcaldia.value_counts().to_dict()}")
-    print(f"Tiempo: {time.time() - t0:.0f} s | Reporte: reports/indice_expansion.md | Entregable: outputs/top{cfg.TOP_N}_zonas_3b.geojson")
+    print(f"Tiempo: {time.time() - t0:.0f} s | Reporte: reports/indice_expansion.md | Top v1: outputs/top{cfg.TOP_N}_indice_v1.geojson")

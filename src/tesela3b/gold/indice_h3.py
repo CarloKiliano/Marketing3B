@@ -236,7 +236,7 @@ def exportar_top(top: gpd.GeoDataFrame, ruta) -> None:
     t["lat"], t["lon"] = t["h3"].map(centros["lat"]).round(6), t["h3"].map(centros["lon"]).round(6)
     t = gpd.GeoDataFrame(t[COLUMNAS_TOP], geometry=t.geometry.values, crs=cfg.CRS_WEB)
     ruta.parent.mkdir(parents=True, exist_ok=True)
-    t.to_file(ruta, driver="GeoJSON")
+    ruta.write_text(t.to_json(drop_id=True, ensure_ascii=False), encoding="utf-8")   # sin borrar el archivo previo
 
 
 def reporte(resultados: dict) -> str:
@@ -306,7 +306,7 @@ def ejecutar(escribir: bool = True) -> dict:
             top.to_parquet(cfg.GOLD / f"top{cfg.TOP_N}_{corte}.parquet", index=False)
             (cfg.GOLD / f"parametros_{corte}.json").write_text(json.dumps(parametros(), indent=2, ensure_ascii=False))
     if escribir:
-        exportar_top(resultados[cfg.CORTE_ACTUAL]["top"], cfg.OUTPUTS / f"top{cfg.TOP_N}_zonas_3b.geojson")
+        exportar_top(resultados[cfg.CORTE_ACTUAL]["top"], cfg.OUTPUTS / f"top{cfg.TOP_N}_indice_v1.geojson")
         rep = cfg.ROOT / "reports" / "indice_expansion.md"
         rep.parent.mkdir(parents=True, exist_ok=True)
         rep.write_text(reporte(resultados), encoding="utf-8")
