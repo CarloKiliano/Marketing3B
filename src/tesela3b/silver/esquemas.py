@@ -39,6 +39,41 @@ TIENDAS_3B_ACTUAL = pa.DataFrameSchema(
 )
 
 
+_PCT = pa.Check.in_range(0, 100)
+
+AGEB_PERFIL = pa.DataFrameSchema(
+    {
+        "CVEGEO": pa.Column(str, [pa.Check.str_length(13, 13), pa.Check.str_startswith(cfg.CVE_ENT)], unique=True),
+        "alcaldia": pa.Column(str),
+        "poblacion": pa.Column(float, pa.Check.ge(0)),
+        "hogares": pa.Column(float, pa.Check.ge(0), nullable=True),
+        "area_km2": pa.Column(float, pa.Check.gt(0)),
+        "hogares_km2": pa.Column(float, pa.Check.ge(0), nullable=True),
+        "pct_sin_auto": pa.Column(float, _PCT, nullable=True),
+        "pct_sin_computadora": pa.Column(float, _PCT, nullable=True),
+        "pct_sin_internet": pa.Column(float, _PCT, nullable=True),
+        "pct_hacinamiento": pa.Column(float, _PCT, nullable=True),
+        "pct_sin_derechohabiencia": pa.Column(float, _PCT, nullable=True),
+        "grado_rezago": pa.Column(str, pa.Check.isin(["Muy bajo", "Bajo", "Medio", "Alto", "Muy alto"]), nullable=True),
+    },
+    strict=False, coerce=True,
+)
+
+MANZANAS_DEMANDA = pa.DataFrameSchema(
+    {
+        "CVEGEO": pa.Column(str, pa.Check.str_length(16, 16), unique=True),
+        "cvegeo_ageb": pa.Column(str, pa.Check.str_length(13, 13)),
+        "poblacion": pa.Column(float, pa.Check.gt(0)),
+        "hogares": pa.Column(float, pa.Check.ge(0), nullable=True),
+        "hogares_imputado": pa.Column(bool),
+        "area_m2": pa.Column(float, pa.Check.gt(0)),
+    },
+    checks=pa.Check(lambda d: (d["hogares"].fillna(0) <= d["poblacion"]).all(),
+                    error="una manzana no puede tener más hogares que habitantes"),
+    strict=False, coerce=True,
+)
+
+
 def validar(df, esquema):
     """Valida sin la columna de geometría (pandera trabaja sobre pandas)."""
     return esquema.validate(df.drop(columns="geometry", errors="ignore"), lazy=True)

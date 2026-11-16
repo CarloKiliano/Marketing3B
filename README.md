@@ -72,6 +72,7 @@ python scripts/02_verificar_bronze.py
 # 4. Capa Silver
 python scripts/03_silver_denue.py          # tiendas por cadena, 3B y aperturas
 python scripts/04_precision_validacion.py  # tras validar a mano docs/validacion/muestra_validacion_3b.csv
+python scripts/05_silver_demanda.py        # censo + Marco Geoestadístico + CONEVAL
 
 # 4. Pruebas
 pytest
@@ -83,8 +84,8 @@ pytest
 | --- | --- | --- |
 | 0 | Alcance aprobado, caso de negocio, Bronze | Completa |
 | 1 | Exploración de datos (EDA): 143 → 305 tiendas 3B, 169 aperturas para el backtest | Completa |
-| 2.1 | Silver DENUE: 10 cadenas, 3B 144 → 305, 162 aperturas confirmadas, 34 tests | Completa (falta validación manual) |
-| 2.2 | Silver censo + Marco Geo + CONEVAL | Siguiente |
+| 2.1 | Silver DENUE: 10 cadenas, 3B 144 → 305, 162 aperturas confirmadas; validación manual 88% (IC 95% 76–94%) | Completa |
+| 2.2 | Silver demanda: 2,431 AGEB con perfil y 63,076 manzanas habitadas (2.74 M hogares) | Completa |
 | 3 | Índice de expansión H3 + Top 20 + comparación KDE vs H3 | Pendiente |
 | 4 | Backtest + comparación Voronoi vs Huff vs isócronas | Pendiente |
 | 5 | App Streamlit publicada | Pendiente |
