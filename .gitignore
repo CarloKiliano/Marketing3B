@@ -29,3 +29,6 @@ desktop.ini
 .idea/
 .env
 data/_tmp/
+
+# Streamlit: nunca subir llaves (capa generativa)
+.streamlit/secrets.toml

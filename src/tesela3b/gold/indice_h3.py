@@ -101,16 +101,20 @@ def _potencia(x: pd.Series, lam: float) -> pd.Series:
     return np.where(x > 0, np.power(x.clip(lower=0), lam), 0.0)
 
 
-def calcular_indice(demanda: pd.DataFrame, oferta: pd.DataFrame, pares: pd.DataFrame,
-                    alpha0: float = cfg.HUFF_OPCION_EXTERNA, a_nueva: float = cfg.ATRACTIVO["3B"],
-                    beta: float = cfg.HUFF_BETA_M, lam: float = cfg.HUFF_LAMBDA_NIDO) -> pd.DataFrame:
-    """Índice incremental (Huff anidado) para cada hexágono con demanda (candidato)."""
+def estado_huff(demanda: pd.DataFrame, oferta: pd.DataFrame, pares: pd.DataFrame,
+                alpha0: float = cfg.HUFF_OPCION_EXTERNA, beta: float = cfg.HUFF_BETA_M,
+                lam: float = cfg.HUFF_LAMBDA_NIDO) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Situación actual de cada hexágono de demanda h (antes de abrir): atracción por nido y cuota 3B.
+
+    Devuelve (est, p): `est` indexado por h3 con D, s3b, i_hd, den_sin_hd, p3b, cuota_hd; `p` son los pares con f.
+    Es lo que necesita el simulador de la app para evaluar una tienda nueva en cualquier hexágono.
+    """
     p = pares.copy()
     p["f"] = decaimiento(p["d"].to_numpy(), beta)
     of = oferta.set_index("h3")
     masas = ["masa_3b"] + [f"masa_{_col(n)}" for n in NIDOS]
 
-    # 1) Atracción actual de cada nido sobre cada hexágono de demanda h (origen = tienda, destino = h)
+    # Atracción actual de cada nido sobre cada hexágono de demanda h (origen = tienda, destino = h)
     for mcol in masas:
         p[mcol] = p["origen"].map(of[mcol]).fillna(0) * p["f"]
     atr = p.groupby("destino")[masas].sum()
@@ -125,16 +129,30 @@ def calcular_indice(demanda: pd.DataFrame, oferta: pd.DataFrame, pares: pd.DataF
     est["den"] = est["den_sin_hd"] + est["v_hd"]
     est["p3b"] = np.where(est["i_hd"] > 0, est["v_hd"] / est["den"] * est["s3b"] / est["i_hd"].where(est["i_hd"] > 0, 1), 0)
     est["cuota_hd"] = est["v_hd"] / est["den"]
+    return est, p[["origen", "destino", "d", "f"]]
+
+
+def efecto_tienda_nueva(q: pd.DataFrame, a_nueva: float = cfg.ATRACTIVO["3B"],
+                        lam: float = cfg.HUFF_LAMBDA_NIDO) -> pd.DataFrame:
+    """Para pares (origen = candidata c, destino = h) ya unidos con el estado de h: hogares captados y canibalizados."""
+    g = a_nueva * q["f"]
+    i_hd2 = q["i_hd"] + g
+    p_hd2 = np.power(i_hd2, lam) / (q["den_sin_hd"] + np.power(i_hd2, lam))
+    return pd.DataFrame({"capturada": q["D"] * p_hd2 * g / i_hd2,
+                         "canibalizacion": q["D"] * (q["p3b"] - p_hd2 * q["s3b"] / i_hd2),
+                         "accesible": q["D"] * q["f"]}, index=q.index)
+
+
+def calcular_indice(demanda: pd.DataFrame, oferta: pd.DataFrame, pares: pd.DataFrame,
+                    alpha0: float = cfg.HUFF_OPCION_EXTERNA, a_nueva: float = cfg.ATRACTIVO["3B"],
+                    beta: float = cfg.HUFF_BETA_M, lam: float = cfg.HUFF_LAMBDA_NIDO) -> pd.DataFrame:
+    """Índice incremental (Huff anidado) para cada hexágono con demanda (candidato)."""
+    est, p = estado_huff(demanda, oferta, pares, alpha0, beta, lam)
 
     # 2) Efecto de una tienda nueva en c sobre cada h a su alcance (origen = c, destino = h)
     q = p[p["origen"].isin(est.index) & p["destino"].isin(est.index)][["origen", "destino", "f"]]
     q = q.join(est[["D", "s3b", "i_hd", "den_sin_hd", "p3b"]], on="destino")
-    g = a_nueva * q["f"]
-    i_hd2 = q["i_hd"] + g
-    p_hd2 = np.power(i_hd2, lam) / (q["den_sin_hd"] + np.power(i_hd2, lam))
-    q["capturada"] = q["D"] * p_hd2 * g / i_hd2
-    q["canibalizacion"] = q["D"] * (q["p3b"] - p_hd2 * q["s3b"] / i_hd2)
-    q["accesible"] = q["D"] * q["f"]
+    q = q.join(efecto_tienda_nueva(q, a_nueva, lam))
     res = q.groupby("origen")[["capturada", "canibalizacion", "accesible"]].sum()
 
     out = demanda.set_index("h3").join(res).join(est[["p3b", "cuota_hd"]].rename(
