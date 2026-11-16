@@ -1,4 +1,7 @@
-"""Configuración central del proyecto: rutas, sistemas de referencia y parámetros."""
+"""Configuración central del proyecto: rutas, sistemas de referencia y parámetros de negocio.
+
+Regla: ningún número "mágico" vive dentro de la lógica; todo parámetro se define aquí con su porqué.
+"""
 from pathlib import Path
 
 # --- Rutas -----------------------------------------------------------------
@@ -10,14 +13,44 @@ SILVER = DATA / "silver"          # datos limpios, tipados y unidos (GeoParquet)
 GOLD = DATA / "gold"              # features, índice H3 y salidas de modelo
 OUTPUTS = ROOT / "outputs"        # entregables: Top 20 en GeoJSON, tablas finales
 FIGURES = ROOT / "reports" / "figures"
+DOCS = ROOT / "docs"
 
 # --- Sistemas de referencia (CRS) -----------------------------------------
 CRS_WEB = "EPSG:4326"      # WGS84: almacenamiento, mapas web y GeoJSON
 CRS_METRIC = "EPSG:6369"   # Mexico ITRF2008 / UTM 14N: distancias, áreas, KDE, isócronas
-CRS_INEGI = "EPSG:6372"    # Cónica Conforme de Lambert de INEGI (Marco Geoestadístico)
+# El Marco Geoestadístico viene en "MEXICO_ITRF_2008_LCC" (Lambert de INEGI, equivalente a
+# EPSG:6372 pero sin código EPSG en su .prj): se reproyecta leyendo su propio .prj.
 
 # --- Área de estudio -------------------------------------------------------
 CVE_ENT = "09"             # Ciudad de México
+BBOX_CDMX = (-99.37, 19.04, -98.94, 19.60)   # lon_min, lat_min, lon_max, lat_max (validación)
+
+# --- Cortes temporales del DENUE ------------------------------------------
+CORTE_BACKTEST = "2021_11"   # "foto" del pasado: se construye el índice solo con esto
+CORTE_ACTUAL = "2026_05"     # "foto" actual: recomendación final y etiqueta del backtest
+CORTES = (CORTE_BACKTEST, CORTE_ACTUAL)
+
+# --- Silver · DENUE --------------------------------------------------------
+# Dos registros de la misma cadena a menos de esta distancia son la misma tienda registrada
+# dos veces (EDA: misma manzana, distinta fecha de alta). Se conserva el registro más antiguo.
+UMBRAL_DUPLICADO_M = 50
+# Para la competencia el umbral es menor: en zonas densas hay OXXO/7-Eleven reales a 25-50 m
+# entre sí (direcciones distintas); por debajo de 25 m casi siempre es el mismo punto.
+UMBRAL_DUPLICADO_COMPETENCIA_M = 25
+# Una tienda 3B del corte actual es "apertura" si no había una 3B del corte anterior a menos
+# de esta distancia. Se reporta sensibilidad con los umbrales alternativos.
+UMBRAL_APERTURA_M = 100
+UMBRALES_APERTURA_SENSIBILIDAD = (50, 100, 200)
+# Tamaño de la muestra para validar a mano la identificación de tiendas 3B.
+N_MUESTRA_VALIDACION = 50
+SEMILLA = 42
+
+# Códigos SCIAN de tiendas al menudeo de despensa (excluye CEDIS, oficinas, mayoreo).
+SCIAN_ABARROTES = "461110"     # tiendas de abarrotes, ultramarinos y misceláneas
+SCIAN_SUPERMERCADO = "462111"  # supermercados
+SCIAN_MINISUPER = "462112"     # minisupers
+SCIAN_TIENDAS = (SCIAN_ABARROTES, SCIAN_SUPERMERCADO, SCIAN_MINISUPER)
+SCIAN_MAYOREO_ABARROTES = "431110"  # en 2021 INEGI registró aquí a la mayoría de las Neto
 
 # --- Parámetros del modelo (valores iniciales, se ajustan en Gold) --------
 H3_RES = 9                          # ~0.1 km2 por hexágono
@@ -26,18 +59,3 @@ ISOCHRONES_MIN = [5, 10]            # minutos caminando
 WALK_SPEED_KMH = 4.5
 MIN_DIST_CANDIDATAS_M = 600         # separación mínima entre zonas del Top 20
 TOP_N = 20
-
-# --- Patrones para identificar cadenas en el DENUE ------------------------
-# Se validan manualmente en Silver; ajustar si aparecen falsos positivos.
-PATRONES_CADENAS = {
-    # Se busca en nom_estab + raz_social. Primer conteo (verificación Bronze):
-    # 3B en CDMX = 153 (DENUE 11/2021) y 338 (DENUE 05/2026).
-    "3B": r"TIENDAS?\s*3\s*B\b|TIENDAS?\s*TRES\s*B\b|^\s*T?3\s*B\s*$|BBB\s*FOODS?",
-    "BODEGA_AURRERA": r"BODEGA\s*AURRERA|MI\s*BODEGA",   # revisar también raz_social de Walmart
-    "NETO": r"TIENDAS?\s*NETO",
-    "OXXO": r"\bOXXO\b",
-    "SORIANA_EXPRESS": r"SORIANA\s*(EXPRESS|SUPER)",
-}
-# Solo tiendas al menudeo: excluye CEDIS, oficinas, etc. (462111 supermercados, 462112 minisupers)
-SCIAN_TIENDAS = ("462111", "462112", "461110")
-SCIAN_ABARROTES = "461110"   # Comercio al por menor en tiendas de abarrotes

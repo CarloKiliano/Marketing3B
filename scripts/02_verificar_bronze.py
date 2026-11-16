@@ -8,7 +8,8 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from tesela3b.config import BRONZE, PATRONES_CADENAS  # noqa: E402
+from tesela3b.config import BRONZE  # noqa: E402
+from tesela3b.silver.denue import clasificar_cadena  # noqa: E402
 
 
 def titulo(t: str) -> None:
@@ -20,9 +21,9 @@ def verificar_denue() -> None:
         ruta = BRONZE / "denue" / version / "conjunto_de_datos" / "denue_inegi_09_.csv"
         df = pd.read_csv(ruta, encoding="latin-1", dtype=str)
         titulo(f"DENUE {version}: {len(df):,} filas x {df.shape[1]} columnas")
-        texto = (df["nom_estab"].fillna("") + " | " + df["raz_social"].fillna("")).str.upper()
-        for cadena, patron in PATRONES_CADENAS.items():
-            print(f"  {cadena:16s} {texto.str.contains(patron, regex=True).sum():6d} coincidencias")
+        # Conteo preliminar (sin deduplicar) con las mismas reglas que usa Silver
+        for cadena, n in clasificar_cadena(df).value_counts().items():
+            print(f"  {cadena:28s} {n:7,d}")
         print("  lat/lon nulos:", df["latitud"].isna().sum(), "/", df["longitud"].isna().sum())
 
 

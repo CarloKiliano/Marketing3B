@@ -14,7 +14,7 @@ Tiendas 3B (BBB Foods, NYSE: TBBB) cerró el 2T26 con 3,624 tiendas y planea has
 2. **Activación:** ¿alrededor de qué tiendas hay demanda no capturada para campañas de geofencing, volanteo o folleto? → zonas por tienda.
 3. **Medición:** ¿cómo probar que una campaña aumentó visitas? → diseño de geo-experimento.
 
-**Validación:** backtest con DENUE histórico. En la CDMX el DENUE registra ~153 tiendas 3B en 11/2021 y ~338 en 05/2026 (conteo preliminar); el índice se construye con 2021 y se evalúa contra las aperturas reales.
+**Validación:** backtest con DENUE histórico. En la CDMX hay 144 tiendas 3B únicas en 11/2021 y 305 en 05/2026: **162 aperturas confirmadas**. El índice se construye solo con datos de 2021 y se evalúa contra esas aperturas reales (ver [`docs/calidad_silver_denue.md`](docs/calidad_silver_denue.md)).
 
 ## Metodología
 
@@ -69,6 +69,10 @@ pip install -e .
 python scripts/01_extraer_bronze.py
 python scripts/02_verificar_bronze.py
 
+# 4. Capa Silver
+python scripts/03_silver_denue.py          # tiendas por cadena, 3B y aperturas
+python scripts/04_precision_validacion.py  # tras validar a mano docs/validacion/muestra_validacion_3b.csv
+
 # 4. Pruebas
 pytest
 ```
@@ -79,7 +83,8 @@ pytest
 | --- | --- | --- |
 | 0 | Alcance aprobado, caso de negocio, Bronze | Completa |
 | 1 | Exploración de datos (EDA): 143 → 305 tiendas 3B, 169 aperturas para el backtest | Completa |
-| 2 | Silver: 3B y competencia identificadas, aperturas 2021→2026, censo unido a AGEB | Siguiente |
+| 2.1 | Silver DENUE: 10 cadenas, 3B 144 → 305, 162 aperturas confirmadas, 34 tests | Completa (falta validación manual) |
+| 2.2 | Silver censo + Marco Geo + CONEVAL | Siguiente |
 | 3 | Índice de expansión H3 + Top 20 + comparación KDE vs H3 | Pendiente |
 | 4 | Backtest + comparación Voronoi vs Huff vs isócronas | Pendiente |
 | 5 | App Streamlit publicada | Pendiente |

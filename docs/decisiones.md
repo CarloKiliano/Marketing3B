@@ -25,3 +25,9 @@ Formato: fecha · decisión · motivo · alternativa descartada.
 | 2026-11-15 | Competencia se busca en todos los sectores SCIAN, no solo el 46 | En 2021 INEGI clasificó a Neto como mayoreo (431110) | Filtrar solo sector 46 |
 | 2026-11-15 | Perfil socioeconómico con indicadores continuos (% sin auto, sin computadora), no el grado de rezago | 90% de las AGEB de la CDMX tienen rezago Bajo o Muy bajo: el grado casi no discrimina | Grado de rezago categórico |
 | 2026-11-15 | Metro: normalizar texto (doble codificación + acentos) y usar promedios 2023+ | El archivo mezcla "Línea"/"Linea"; 2021–2022 afectados por la pandemia | Usar la serie completa |
+| 2026-11-15 | Silver DENUE (Fase 2.1): Neto se identifica por razón social "Tiendas Super Precio", también en SCIAN 431110 | Es la única marca confiable en ambos cortes (148 → 230 tiendas) | Buscar "NETO" en el nombre |
+| 2026-11-15 | Cadenas identificadas: 3B, Neto, Bodega Aurrera, OXXO, 7-Eleven, Circle K, Walmart otros, Soriana, Chedraui, La Comer | Cubren los formatos que compiten por la despensa: hard discount, conveniencia y supermercado | Solo 3B y Bodega Aurrera |
+| 2026-11-15 | Deduplicación: 50 m para 3B, 25 m para la competencia | A 25–50 m hay OXXO/7-Eleven reales con direcciones distintas; 3B no tiene tiendas tan cercanas | Un solo umbral de 50 m (borraba tiendas reales) |
+| 2026-11-15 | Etiqueta del backtest = `apertura_confirmada` (162): sin 3B de 2021 a < 100 m y fecha de alta ≥ 2021-11 | Descarta 6 tiendas antiguas que el DENUE 2021 no registró | `apertura` geográfica sola (168) |
+| 2026-11-15 | Abarrotes + minisúper independiente se modelan juntos como "comercio tradicional" | 534 minisúpers de 2021 aparecen en el mismo punto como abarrotes en 2026 (reclasificación INEGI) | Tratarlos como capas separadas |
+| 2026-11-15 | Contratos de datos con pandera en cada corrida de Silver | Un dato roto falla el pipeline en lugar de contaminar el modelo | Validar solo en tests |
