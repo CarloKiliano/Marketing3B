@@ -553,12 +553,142 @@ with TABS[3]:
 # 5. Pregúntale al mapa (capa generativa: siguiente versión)
 # ===========================================================================
 with TABS[4]:
-    st.markdown("<div class='t3b-callout'><b>Próximamente:</b> pregúntale al mapa en lenguaje natural. Un modelo de lenguaje "
-                "traducirá tu pregunta a una consulta sobre estos mismos datos y te responderá con cifras y un mapa.</div>",
+    import os
+    import time
+
+    from tesela3b.app.asistente import agente as ag
+    from tesela3b.app.asistente import demo as dm
+    from tesela3b.app.asistente import llm
+    from tesela3b.app.asistente.herramientas import Herramientas
+
+    @st.cache_resource(show_spinner=False)
+    def herramientas() -> Herramientas:
+        return Herramientas(D)
+
+    def secretos() -> dict:
+        out = {k: v for k, v in os.environ.items() if k.endswith(("_API_KEY", "_MODEL", "_BASE_URL"))}
+        try:
+            out.update({k: st.secrets[k] for k in st.secrets.keys()})
+        except Exception:   # sin archivo de secrets
+            pass
+        return out
+
+    HERR = herramientas()
+    PROV = llm.proveedores_desde(secretos())
+    LIMITE_SESION = 15
+    ss = st.session_state
+    ss.setdefault("chat", [])
+    ss.setdefault("n_llm", 0)
+
+    if PROV:
+        estado = (f"Conectado a <b>{PROV[0].nombre}</b> ({es.esc(PROV[0].modelo)})"
+                  + (f" · respaldo <b>{PROV[1].nombre}</b>" if len(PROV) > 1 else "")
+                  + f" · {max(LIMITE_SESION - ss['n_llm'], 0)} preguntas libres restantes en esta sesión")
+    else:
+        estado = "<b>Modo demo:</b> sin modelo de lenguaje configurado; responden las preguntas de ejemplo con cifras verificadas."
+    st.markdown("<div class='t3b-callout'><b>Pregúntale al mapa en lenguaje natural.</b> Un modelo de lenguaje traduce tu "
+                "pregunta a consultas sobre <b>estos mismos datos</b> (los ejecuta la app, no el modelo) y responde solo con "
+                f"cifras que salen de ahí. Siempre puedes ver cómo se calculó.<br/><span class='t3b-nota'>{estado}</span></div>",
                 unsafe_allow_html=True)
-    st.markdown("**Ejemplos de lo que podrás preguntar**")
-    st.markdown("".join(f"<span class='t3b-pill'>{es.esc(p)}</span>" for p in [
-        "¿Cuáles son las 5 mejores zonas en Iztapalapa?", "¿Qué zonas tienen más de 500 hogares nuevos y poca canibalización?",
-        "¿Cuántos hogares sin auto no tienen una 3B a 10 minutos en Tláhuac?", "Compara Coyoacán contra Álvaro Obregón",
-        "¿Dónde hay Neto o Bodega Aurrera pero no 3B?"]), unsafe_allow_html=True)
-    st.chat_input("Escribe tu pregunta… (disponible en la siguiente versión)", disabled=True)
+
+    ETIQ = {"top_zonas": "Ranking de zonas (mismo cálculo que «Dónde abrir»)", "simular_apertura": "Simulador de apertura",
+            "explicar_zona": "Factores del modelo para la zona", "resumen_alcaldia": "Resumen de la alcaldía",
+            "consultar_datos": "Consulta a la base de datos"}
+
+    def mostrar_detalle(resp: ag.Respuesta, clave: str) -> None:
+        if resp.cifras_no_verificadas:
+            st.warning("Revisa estas cifras: no aparecen en los datos consultados → " + ", ".join(resp.cifras_no_verificadas))
+        if resp.resultados:
+            with st.expander("¿Cómo lo calculé?"):
+                for i, r in enumerate(resp.resultados):
+                    st.markdown(f"**{i + 1}. {ETIQ.get(r.nombre, r.nombre)}**" + (" · ⚠️ falló y el asistente corrigió" if r.error else ""))
+                    if r.sql:
+                        st.code(r.sql, language="sql")
+                    else:
+                        st.caption("Parámetros: " + ", ".join(f"{k} = {v}" for k, v in r.argumentos.items() if v not in (None, [], "")))
+                    if r.tabla is not None and not r.tabla.empty:
+                        st.dataframe(r.tabla.drop(columns=[c for c in ("lat", "lon") if c in r.tabla.columns]).head(50),
+                                     hide_index=True, use_container_width=True, key=f"tab_{clave}_{i}")
+                st.caption(f"Respondió: {resp.proveedor}" + (f" · {resp.modelo}" if resp.modelo else "")
+                           + ("  ·  " + " · ".join(resp.avisos) if resp.avisos else ""))
+
+    def mapa_respuesta(h3s: list[str]) -> None:
+        sel = H[H["h3"].isin(h3s)]
+        base = H.assign(color=[es.color_rampa(v, 70) for v in H["prioridad_actual"]])
+        capas = [capa_hex(base, "hex_chat_base", extruido=False, pickable=False)]
+        if len(sel):
+            hs = texto_hex(sel).assign(color=[es.hex_a_rgb(es.AMARILLO)] * len(sel))
+            capas.append(pdk.Layer("H3HexagonLayer", hs, id="hex_chat", get_hexagon="h3", get_fill_color="color",
+                                   stroked=True, get_line_color=es.hex_a_rgb(es.TINTA), line_width_min_pixels=2,
+                                   extruded=False, pickable=True))
+            lat, lon = float(sel["lat"].mean()), float(sel["lon"].mean())
+            ext = max(sel["lat"].max() - sel["lat"].min(), (sel["lon"].max() - sel["lon"].min()) * 0.95, 0.004)
+            zoom = float(np.clip(np.log2(0.9 / ext) + 7.4, 9.6, 14.0))
+        else:
+            lat, lon, zoom = 19.36, -99.13, 9.8
+        t3b = D.tiendas[(D.tiendas["corte"] == M["cortes"][1]) & (D.tiendas["cadena"] == "3B")]
+        capas.append(capa_puntos(texto_tiendas(t3b), "t3b_chat", es.hex_a_rgb(es.TINTA)))
+        st.pydeck_chart(pdk.Deck(layers=capas, initial_view_state=pdk.ViewState(latitude=lat, longitude=lon, zoom=zoom),
+                                 map_style=MAPA_BASE, tooltip=TOOLTIP), height=470, key=f"mapa_chat_{len(ss['chat'])}")
+        st.markdown(es.leyenda([(es.AMARILLO, f"Zonas de la respuesta ({len(sel)})"), (es.TINTA, "Tienda 3B actual")], rampa=False),
+                    unsafe_allow_html=True)
+
+    def escribir_lento(texto: str):
+        for palabra in texto.split(" "):
+            yield palabra + " "
+            time.sleep(0.012)
+
+    col_chat, col_mapa = st.columns([1.25, 1], gap="large")
+    with col_chat:
+        ejemplo = None
+        with st.expander("Preguntas de ejemplo (siempre disponibles, con cifras verificadas)", expanded=not ss["chat"]):
+            cols_ej = st.columns(2)
+            for i, q in enumerate(dm.EJEMPLOS):
+                if cols_ej[i % 2].button(q, key=f"ej_{i}", use_container_width=True):
+                    ejemplo = q
+        conversacion = st.container()
+        escrita = st.chat_input("Escribe tu pregunta sobre zonas, alcaldías, cobertura o competencia…")
+        pregunta = escrita or ejemplo
+        with conversacion:
+            if not ss["chat"] and not pregunta:
+                st.markdown("<div class='t3b-nota'>Elige una pregunta de ejemplo o escribe la tuya abajo. Puedes seguir la "
+                            "conversación: «¿y en Tlalpan?», «simula abrir en la #2».</div>", unsafe_allow_html=True)
+            for k, m in enumerate(ss["chat"]):
+                with st.chat_message("user" if m["rol"] == "user" else "assistant", avatar="🧑‍💼" if m["rol"] == "user" else "🗺️"):
+                    st.markdown(m["texto"])
+                    if m.get("resp") is not None:
+                        mostrar_detalle(m["resp"], f"h{k}")
+            if pregunta:
+                with st.chat_message("user", avatar="🧑‍💼"):
+                    st.markdown(pregunta)
+                with st.chat_message("assistant", avatar="🗺️"):
+                    usar_modelo = bool(PROV) and ss["n_llm"] < LIMITE_SESION
+                    if usar_modelo:
+                        with st.spinner("Consultando los datos…"):
+                            historial = [{"role": m["rol"], "content": m["texto"]} for m in ss["chat"]]
+                            resp = ag.responder(pregunta, historial, PROV, HERR)
+                        ss["n_llm"] += 1
+                        if resp.error and pregunta in dm.EJEMPLOS:
+                            resp = dm.responder_demo(pregunta, HERR)
+                    else:
+                        resp = dm.responder_demo(pregunta, HERR)
+                        if resp is None:
+                            motivo = ("Llegaste al límite de preguntas libres de esta sesión (cuida el plan gratuito)."
+                                      if PROV else "Esta versión pública está en modo demo, sin modelo de lenguaje.")
+                            resp = ag.Respuesta(texto=f"{motivo} Puedes usar las preguntas de ejemplo, que se responden con "
+                                                      "cifras verificadas directamente de los datos.", proveedor="App")
+                    st.write_stream(escribir_lento(resp.texto))
+                    mostrar_detalle(resp, f"n{len(ss['chat'])}")
+                ss["chat"] += [{"rol": "user", "texto": pregunta, "resp": None},
+                               {"rol": "assistant", "texto": resp.texto, "resp": resp}]
+                ss["ultimo_h3"] = resp.h3
+            if ss["chat"]:
+                if st.button("Borrar conversación", type="tertiary"):
+                    ss["chat"], ss["ultimo_h3"] = [], []
+                    st.rerun()
+    with col_mapa:
+        st.markdown("##### Mapa de la respuesta")
+        mapa_respuesta(ss.get("ultimo_h3", []))
+        st.markdown("<div class='t3b-nota'>Las preguntas se envían a un modelo de lenguaje gratuito (Groq; respaldo Gemini). "
+                    "Solo se envían tu pregunta y resultados agregados de datos públicos. El modelo puede equivocarse al "
+                    "interpretar: revisa «¿Cómo lo calculé?».</div>", unsafe_allow_html=True)

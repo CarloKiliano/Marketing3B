@@ -86,6 +86,12 @@ python scripts/08_backtest.py              # backtest 2021->2026, Voronoi vs Huf
 python scripts/09_preparar_app.py          # paquete ligero de datos -> src/tesela3b/app/datos/ (~4 MB, se versiona)
 streamlit run src/tesela3b/app/streamlit_app.py
 
+# 8. Asistente «Pregúntale al mapa» (opcional: llaves gratuitas de Groq y Gemini)
+#    Crea .streamlit/secrets.toml (NO se sube a GitHub) con:
+#      GROQ_API_KEY = "..."
+#      GEMINI_API_KEY = "..."
+python scripts/10_evaluar_asistente.py     # 25 preguntas de prueba -> reports/evaluacion_asistente.md
+
 # 4. Pruebas
 pytest
 ```
@@ -100,9 +106,9 @@ pytest
 | 2.2 | Silver demanda: 2,431 AGEB con perfil y 63,076 manzanas habitadas (2.74 M hogares) | Completa |
 | 3 | Índice de expansión H3 (Huff anidado + canibalización + red) + Top 20 v1 + comparación KDE vs H3 | Completa |
 | 4 | Backtest 2021→2026 (AUC 0.74, lift 2.6× en el 10% superior), Voronoi vs Huff vs isócronas, modelo de preferencia revelada, Top 20 final | Completa |
-| 5 | App Streamlit (mapa 3D de prioridad, Top N con fichas, simulador por clic, backtest, métodos) | Completa (falta publicar) |
+| 5 | App Streamlit publicada (mapa 3D de prioridad, Top N con fichas, simulador por clic, backtest, métodos) | Completa |
+| Extra 1 | Asistente «Pregúntale al mapa» (Groq + Gemini gratis, herramientas sobre DuckDB, modo demo, evaluación) | Completa (falta evaluar con llaves) |
 | 6 | Presentación ejecutiva de marketing para 3B | Pendiente |
-| Extra 1 | Capa generativa dentro de la app | Opcional |
 | Extra 2 | Drive-to-store completo + geo-experimento | Opcional |
 
 ## Limitaciones
